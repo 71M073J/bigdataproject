@@ -16,9 +16,17 @@ if save_files:
                 chunk.to_hdf("parking.hdf5", key="chunk_" + str(i), mode="a")
 chunked = False
 if chunked:
-    df_list = pd.read_parquet('parking.parquet', dtype=str, header=0, chunksize=100000)
+    df_list = pd.read_csv('Parking_Violations_Issued_-_Fiscal_Year_2023.csv', dtype=str, header=0, chunksize=100000)
 else:
-    df_list = [pd.read_parquet('parking.parquet', dtype=str, header=0)]
+    df_list = pd.read_csv('Parking_Violations_Issued_-_Fiscal_Year_2023.csv', dtype=str, header=0)
+fix_order = True
+if fix_order:
+    if chunked:
+        df_list = next(df_list)
+    df_list["Issue Date"] = pd.to_datetime(df_list["Issue Date"])
+    df_list = df_list.sort_values("Issue Date")
+    df_list.to_parquet('parking.parquet')
+    quit()
 #pd.set_option('display.max_rows', 500)
 #pd.set_option('display.expand_frame_repr', False)
 pd.set_option('display.max_columns', 500)
