@@ -73,7 +73,7 @@ for chunk in tickets.iter_batches():
             quit()
 
 
-
+#TODO stream clustering algo (lahko iz hw4?)
 
 
 
