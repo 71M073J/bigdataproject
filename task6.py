@@ -1,5 +1,30 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import cv2
+import numpy as np
+set_alpha = False
+if set_alpha:
+    im = cv2.imread("coords_data_precincts.png")
+    rgba = cv2.cvtColor(im, cv2.COLOR_RGB2RGBA)
+    print()
+    mr = (im[:, :, 0] == 255)
+    mg = (im[:, :, 1] == 255)
+    mb = (im[:, :, 2] == 255)
+
+    #rgba = cv2.cvtColor(im, cv2.COLOR_RGB2RGBA)
+    rgba[:, :, 3] = 255 * (1 - (mr + mg + mb))
+    cv2.imwrite("alpha.png", rgba)
+    quit()
+
+
+
+
+
+
+
+
+
+
 
 data = pd.read_parquet("./augmented_data/full_coords.parquet").sort_values(by="Issue Date")
 data["Issue Date"] = pd.to_datetime(data["Issue Date"])
