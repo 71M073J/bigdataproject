@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans, MiniBatchKMeans
 import plotly.express as px
+import dask.dataframe as dd
+
 
 join_dfs = False
 if join_dfs:
@@ -44,7 +46,7 @@ if join_dfs:
 
 edit_streets = False
 if edit_streets:
-    data = pd.read_parquet("./augmented_data/full_w_housenum.parquet")
+    data = dd.read_parquet("./augmented_data/full_w_housenum.parquet")
     count = 0
 
 
@@ -64,6 +66,7 @@ if edit_streets:
 
 
     data["Street Name"] = data["Street Name"].apply(process_names)
+    data.compute()
     data.to_parquet("./augmented_data/full3.parquet")
     quit()
 
@@ -75,11 +78,12 @@ if aaa:
             return 0
         else:
             return int(str(x).split(".")[0].split("-")[0])
-    centerlines = pd.read_csv("./augmented_data/processed_centerlines.csv")
+    centerlines = dd.read_csv("./augmented_data/processed_centerlines.csv")
     centerlines["L_LOW_HN"] = centerlines["L_LOW_HN"].apply(cleanup)
     centerlines["L_HIGH_HN"] = centerlines["L_HIGH_HN"].apply(cleanup)
     centerlines["R_LOW_HN"] = centerlines["R_LOW_HN"].apply(cleanup)
     centerlines["R_HIGH_HN"] = centerlines["R_HIGH_HN"].apply(cleanup)
+    centerlines.compute()
     linedict = {}
     print("building dict")
     for i in range(len(centerlines)):
@@ -90,7 +94,7 @@ if aaa:
 
 
     print("reading data")
-    data = pd.read_parquet("./augmented_data/full3.parquet")
+    data = dd.read_parquet("./augmented_data/full3.parquet")
     data["House Number"].fillna(0, inplace=True)
     lat = np.zeros(len(data), dtype=np.float32)
     long = np.zeros(len(data), dtype=np.float32)
@@ -111,6 +115,7 @@ if aaa:
                     linestr = line["averaged_long_lat"][2:-2].split(", ")
                     lat[i] = float(linestr[0])
                     long[i] = float(linestr[1])
+    data.compute()
     data["lat"] = lat
     data["long"] = long
     data.to_parquet("./augmented_data/full_coords.parquet")
@@ -178,7 +183,8 @@ if fix_order:
         df_list = next(df_list)
     df_list["Issue Date"] = pd.to_datetime(df_list["Issue Date"])
     df_list = df_list.sort_values("Issue Date")
-    df_list.to_parquet('parking.parquet')
+    #df_list.to_parquet('parking.parquet')
+    df_list.to_csv("Parking_Violations_Issued_-_Fiscal_Year_2023.csv", index=False)
     quit()
 clustering = False
 if clustering:
