@@ -8,7 +8,7 @@ from streamz.dataframe import DataFrame
 import pyarrow.parquet as pq
 import matplotlib.pyplot as plt
 import networkx as nx
-
+import dask.dataframe as dd
 
 def get_value(x, val):
     return x[val]
@@ -64,27 +64,7 @@ def get_tickets_today(state, x):
 
 
 source = Stream()
-# TODO running operations
-# Running avg
-# running std dev
-# running_
-aaa = True
-if aaa:
 
-    # source.map(lambda x: get_value(x, "Plate ID")) #za dobit en podatek iz datastreama
-    # .accumulate(running_mean, start=[]) #za dobit running mean, count
-    # .accumulate(variance_update, start=(0,0,0)).map(get_variance) # za dobit running mean, variance, samplevariance
-    # .map(lambda x: get_value(x, "Issue Date")).accumulate(get_tickets_today, start=0) # za dobit current daily tickets čeprav TODO ker ga napake(ne-trenuten datum) sesujejo
-    # .accumulate(lambda stt, x: (x if x > stt else stt)) #running max
-    # .accumulate(lambda stt, x: (x if x < stt else stt)) #running min
-    source.map(lambda x: get_value(x, "Issue Date")).accumulate(get_tickets_today, start=0).sink(print).start()
-    business = 0
-    for g, chunk in range(business):
-        chunk = chunk.to_pandas()
-        for i in range(len(chunk)):
-            source.emit(chunk.iloc[i])
-        print("Batch number", g)
-quit()
 
 
 # TODO stream clustering algo (lahko iz hw4?)
@@ -251,6 +231,31 @@ def CEDAS_cluster(x):
 
         # now we decay
     return outval
+
+# TODO running operations
+# Running avg
+# running std dev
+# running_
+aaa = True
+if aaa:
+    data = dd.read_parquet("./augmented_data/full_coords.parquet")
+    # source.map(lambda x: get_value(x, "Plate ID")) #za dobit en podatek iz datastreama
+    # .accumulate(running_mean, start=[]) #za dobit running mean, count
+    # .accumulate(variance_update, start=(0,0,0)).map(get_variance) # za dobit running mean, variance, samplevariance
+    # .map(lambda x: get_value(x, "Issue Date")).accumulate(get_tickets_today, start=0) # za dobit current daily tickets čeprav TODO ker ga napake(ne-trenuten datum) sesujejo
+    # .accumulate(lambda stt, x: (x if x > stt else stt)) #running max
+    # .accumulate(lambda stt, x: (x if x < stt else stt)) #running min
+    #source.map(lambda x: get_value(x, "lat")).accumulate(variance_update, start=(0,0,0)).map(get_variance).sink(print).start()
+    source.map(lambda x: x[["lat", "long"]]).map(CEDAS_cluster).sink(print).start()
+    business = 0
+    for g, chunk in enumerate(data):
+        chunk = chunk.to_pandas()
+        for i in range(len(chunk)):
+            source.emit(chunk.iloc[i])
+        print("Batch number", g)
+quit()
+
+
 
 
 # microclusters.append(("Center", "Count", "MacroCluster"))
