@@ -236,23 +236,104 @@ def CEDAS_cluster(x):
 # Running avg
 # running std dev
 # running_
-aaa = True
+running_stats = True
+if running_stats:
+
+    leng = 13074628
+    import pyarrow.parquet as pq
+    data = pd.read_parquet("./augmented_data/full_tickettypes.parquet").sort_values(by="Issue Date", ignore_index=True)["Violation Code"].astype(int)
+    #vals = np.zeros(leng)
+    cums = np.zeros(100)
+
+    prices = pd.read_csv("ticket_code_to_fine.csv",
+                         dtype={"VIOLATION CODE": int, "VIOLATION DESCRIPTION": str, "96th": int, "OTHER STREETS": int})
+    pr = {}
+    for i in range(len(prices)):
+        x = prices.iloc[i]
+        pr[x["VIOLATION CODE"]] = x["OTHER STREETS"]
+
+    def mode(x):
+        cums[x] += 1
+        return cums.argmax()
+
+    def ffff(x):
+        try:
+            return pr[x]
+        except:
+            return 0
+
+    data = data.apply(ffff).rolling(leng//356)
+    mn = data.mean()
+    var = data.var()
+    plt.plot(range(len(mn)), mn.values)
+    plt.title("Running mean of ticket price per day")
+    plt.xticks(range(0, len(mn), len(mn)//5), ["06-2022", "08-2022", "10-2022", "12-2022", "02-2023", "04-2023"], rotation=90)
+    plt.xlabel("Date")
+    plt.ylabel("Mean ($)")
+    plt.tight_layout()
+    plt.savefig("mean_price_per_day.png")
+    plt.show()
+    plt.clf()
+    plt.plot(range(len(var)), var.values)
+    plt.xticks(range(0, len(var), len(var)//5), ["06-2022", "08-2022", "10-2022", "12-2022", "02-2023", "04-2023"], rotation=90)
+    plt.xlabel("Date")
+    plt.ylabel("Variance ($)")
+    plt.title("Running variance of ticket price per day")
+    plt.tight_layout()
+    plt.savefig("var_price_per_day.png")
+
+    plt.show()
+
+
+
+
+
+
+
+aaa = False
 if aaa:
-    data = dd.read_parquet("./augmented_data/full_coords.parquet")
+    leng = 13074628
+    import pyarrow.parquet as pq
+    data = pq.ParquetFile("./augmented_data/full_tickettypes.parquet")
+    vals = np.zeros(leng)
+    def plot(x):
+        vals[x[0]] = x[1][1]
+
+    def mode(state, x):
+        if x >= len(state[0]):
+            st = np.zeros(x+1)
+            st[:len(state[0])] = state[0]
+            state = st
+            del st
+            state[x] += 1
+        else:
+            state[0][x] += 1
+        return state, (np.argmax(state[0]), x)
+
+    def count(state, x):
+        return state[0] + 1, x
+
+
+
+
+    #source.accumulate(mode, start=(np.zeros(10),)).map(lambda x:x[1]).accumulate(count, start=(0,)).sink(plot).start()
+    #return state[0] + 1, x
     # source.map(lambda x: get_value(x, "Plate ID")) #za dobit en podatek iz datastreama
     # .accumulate(running_mean, start=[]) #za dobit running mean, count
     # .accumulate(variance_update, start=(0,0,0)).map(get_variance) # za dobit running mean, variance, samplevariance
-    # .map(lambda x: get_value(x, "Issue Date")).accumulate(get_tickets_today, start=0) # za dobit current daily tickets čeprav TODO ker ga napake(ne-trenuten datum) sesujejo
+    # .map(lambda x: get_value(x, "Issue Date")).accumulate(get_tickets_today, start=0) # za dobit current daily tickets čeprav
     # .accumulate(lambda stt, x: (x if x > stt else stt)) #running max
     # .accumulate(lambda stt, x: (x if x < stt else stt)) #running min
     #source.map(lambda x: get_value(x, "lat")).accumulate(variance_update, start=(0,0,0)).map(get_variance).sink(print).start()
-    source.map(lambda x: x[["lat", "long"]]).map(CEDAS_cluster).sink(print).start()
+    #source.map(lambda x: x[["lat", "long"]]).map(CEDAS_cluster).sink(print).start() #input data should be int/float for this
     business = 0
-    for g, chunk in enumerate(data):
-        chunk = chunk.to_pandas()
+    for g, chunk in enumerate(data.iter_batches()):
+        chunk = chunk.to_pandas()["Violation Code"].astype(int)
         for i in range(len(chunk)):
             source.emit(chunk.iloc[i])
         print("Batch number", g)
+    plt.plot(range(leng), vals)
+    plt.show()
 quit()
 
 
@@ -264,6 +345,8 @@ from sklearn.cluster import MiniBatchKMeans
 
 clustering = True
 if clustering:
+
+
     df_list = pd.read_csv('Parking_Violations_Issued_-_Fiscal_Year_2023.csv', header=0, chunksize=1000)
     # source.map().sink().start()
     cluster = MiniBatchKMeans()

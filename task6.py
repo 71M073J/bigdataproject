@@ -39,7 +39,7 @@ plt.title("Heatmap of parking tickets in NYC, by coordinates")
 plt.xlabel("Latitude")
 plt.ylabel("Longitude")
 plt.savefig("coords_data_precincts.png")
-
+plt.clf()
 plt.scatter(-data["lat"][data["lat"] > 0], data["long"][data["long"] > 0], s=1, c="orange", alpha=(1./255.))#c="orange",
 
 plt.title("Heatmap of parking tickets in NYC, by coordinates")
